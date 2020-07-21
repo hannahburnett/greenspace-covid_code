@@ -1,241 +1,9 @@
-# export dataset to stata format
-write.dta(dta_label, "dta_label")
-write.csv(dta_label, "dta_label_csv")
-write.table(dta_label, file = "dta_label_newage.csv", sep = ",")
+
 
 #Before starting...
 
 library(foreign)
 library(lmtest)
-
-#delete row
-dta_code <- dta_code[-1,]
-dta_label <- dta_label[-1,]
-dta_label2 <- dta_label2[-1,]
-
-#Weight tbl works*
-class(dta_code$weight)
-dta_code$weight <- as.numeric(dta_code$weight)
-dta_label$weight <- as.numeric(dta_label$weight)
-class(dta_label$weight)
-
-#Ethnicity groups
-dta_label$ethnicity <- NA
-dta_label$ethnicity[dta_label2$profile_ethnicity=="White British"] <- "White"
-dta_label$ethnicity[dta_label2$profile_ethnicity=="Any other white background"] <- "White"
-dta_label$ethnicity[dta_label2$profile_ethnicity=="White and Black Caribbean"] <- "BAME"
-dta_label$ethnicity[dta_label2$profile_ethnicity=="White and Black African"]  <- "BAME"
-dta_label$ethnicity[dta_label2$profile_ethnicity=="White and Asian"]  <- "BAME"
-dta_label$ethnicity[dta_label2$profile_ethnicity=="Any other mixed background"]  <- "BAME"
-dta_label$ethnicity[dta_label2$profile_ethnicity=="Indian"]  <- "BAME"
-dta_label$ethnicity[dta_label2$profile_ethnicity=="Pakistani"]  <- "BAME"
-dta_label$ethnicity[dta_label2$profile_ethnicity=="Bangladeshi"]  <- "BAME"
-dta_label$ethnicity[dta_label2$profile_ethnicity=="Any other Asian background"]  <- "BAME"
-dta_label$ethnicity[dta_label2$profile_ethnicity=="Black Caribbean"]  <- "BAME"
-dta_label$ethnicity[dta_label2$profile_ethnicity=="Black African"]  <- "BAME"
-dta_label$ethnicity[dta_label2$profile_ethnicity=="Any other black background"]  <- "BAME"
-dta_label$ethnicity[dta_label2$profile_ethnicity=="Chinese"]  <- "BAME"
-dta_label$ethnicity[dta_label2$profile_ethnicity=="Other ethnic group"]  <- "BAME"
-dta_label$ethnicity[dta_label2$profile_ethnicity=="Prefer not to say"]  <- NA
-table(dta_label$ethnicity)
-table(dta_label$profile_ethnicity)
-
-#Change age cats
-dta_label$age2 <- dta_label$age
-dta_label$age <- dta_label_age_$profile_julesage2
-table(dta_label$age)
-table(dta_label$age2)
-
-#make age cat (younger,middle,older):
-dta_label$age <- NA
-dta_label$age[dta_label$age2=="18-24"] <- "18-24"
-dta_label$age[dta_label$age2=="25-34"] <- "25-64"
-dta_label$age[dta_label$age2=="35-44"] <- "25-64"
-dta_label$age[dta_label$age2=="45-54"] <- "25-64"
-dta_label$age[dta_label$age2=="55-64"] <- "25-64"
-dta_label$age[dta_label$age2=="65+"] <- "65+"
-table(dta_label$age)
-#make factor
-dta_label$age <- as.factor(dta_label$age)
-class(dta_label$age)
-#check which will be reference
-contrasts(dta_label$age)
-table(dta_label$age)
-dta_label$age <- relevel(dta_label$age, ref = "25-64")
-contrasts(dta_label$age)
-
-#make/check dog cat
-table(dta_label$pets_rcy)
-class(dta_label$pets_rcy)
-dta_label$pets_rcy <- as.factor(dta_label$pets_rcy)
-dta_label$dogs <- NA
-dta_label$dogs[dta_label$pets_rcy=="Dog owners"] <- "Dog"
-dta_label$dogs[dta_label$pets_rcy=="NA"] <- "None"
-table(dta_label$dogs)
-dta_label$dogs[is.na(dta_label$dogs)] <- "None"
-#Make factor
-class(dta_label$dogs)
-dta_label$dogs <- as.factor(dta_label$dogs)
-contrasts(dta_label$dogs)
-#Swap ref cats
-table(dta_label$dogs)
-sort(table(dta_label$dogs), decreasing = TRUE)
-names(sort(table(dta_label$dogs), decreasing = TRUE))
-dta_label$dogs <- factor(dta_label$dogs, 
-                        levels = names(sort(table(dta_label$dogs), decreasing = TRUE)))
-contrasts(dta_label$dogs)
-
-#new social grade cat for plots
-dta_label$social_grade <- NA
-dta_label$social_grade[dta_label$socialgrade=="ABC1"] <- "Higher SG"
-dta_label$social_grade[dta_label$socialgrade=="C2DE"] <- "Lower SG"
-table(dta_label$social_grade)
-dta_label$social_grade <- as.factor(dta_label$social_grade)
-contrasts(dta_label$socialgrade)
-contrasts(dta_label$social_grade)
-
-#2: Log Reg Models***********************
-library(generalhoslem)
-library(stats)
-library(descr)
-
-#Visit GS before lockdown
-
-#Visit = change to binary cats - Yes/No (don't know = missing)
-dta_label$LGO_before <- NA
-dta_label$LGO_before[dta_label$LGO_Q1a=="Yes, I did"] <- "Yes, I did"
-dta_label$LGO_before[dta_label$LGO_Q1a=="No, I didn't"] <- "No, I didn't"
-dta_label$LGO_before[dta_label$LGO_Q1a=="Don't know/ can't recall"] <- NA
-table(dta_label$LGO_before)
-#make factor
-dta_label$LGO_before <- as.factor(dta_label$LGO_before)
-class(dta_label$LGO_before)
-contrasts(dta_label$LGO_before)
-
-#check NA/missing
-sum(is.na(dta_label$LGO_before))
-sum(is.na(dta_label$LGO_Q1a))
-table(dta_label$LGO_Q1a)
-
-
-#Sex = turn into factor
-table(dta_label$profile_gender)
-dta_label$sex <- NA
-dta_label$sex[dta_label$profile_gender=="Female"] <- "Female"
-dta_label$sex[dta_label$profile_gender=="Male"] <- "Male"
-table(dta_label$sex)
-#make factor
-dta_label$sex <- as.factor(dta_label$sex)
-class(dta_label$sex)
-
-# Swap ref cats:
-# Sex
-table(dta_label$sex)
-sort(table(dta_label$sex), increasing = TRUE)
-names(sort(table(dta_label$sex), increasing = TRUE))
-dta_label$sex <- factor(dta_label$sex, 
-                        levels = names(sort(table(dta_label$sex), increasing = TRUE)))
-contrasts(dta_label$sex)
-
-#LGM- Sex
-#check which will be reference
-contrasts(dta_label$sex) 
-#model
-lm.sex.before <- glm(dta_label$LGO_before ~ dta_label$sex, family = binomial, weights = dta_label$weight)
-summary(lm.sex.before)
-exp(cbind(OR = coef(lm.sex.before), confint.default(lm.sex.before)))
-
-
-#Social grade = factor
-dta_label$socialgrade <- NA
-dta_label$socialgrade[dta_label$profile_socialgrade_cie_rc=="ABC1"] <- "ABC1"
-dta_label$socialgrade[dta_label$profile_socialgrade_cie_rc=="C2DE"] <- "C2DE"
-table(dta_label$profile_socialgrade_cie_rc)
-#make factor
-dta_label$socialgrade <- as.factor(dta_label$socialgrade)
-class(dta_label$socialgrade)
-
-#LGM - social grade
-contrasts(dta_label$socialgrade)
-lm.sg.before <- glm(dta_label$LGO_before ~ dta_label$socialgrade, family = binomial, weights = dta_label$weight)
-summary(lm.sg.before)
-exp(cbind(OR = coef(lm.sg.before), confint.default(lm.sg.before)))
-
-#Age = factor
-#class(dta_label$profile_julesage)
-#table(dta_label$profile_julesage2)
-#dta_label$age <- NA
-#dta_label$age[dta_label$profile_julesage2=="18-24"] <- "18-24"
-#dta_label$age[dta_label$profile_julesage2=="25-34"] <- "25-34"
-#dta_label$age[dta_label$profile_julesage2=="35-44"] <- "35-44"
-#dta_label$age[dta_label$profile_julesage2=="45-54"] <- "45-54"
-#dta_label$age[dta_label$profile_julesage2=="55-64"] <- "55-64"
-#dta_label$age[dta_label$profile_julesage2=="65+"] <- "65+"
-table(dta_label$age)
-#make factor
-dta_label$age <- as.factor(dta_label$age)
-class(dta_label$age)
-
-#LGM - age
-contrasts(dta_label$age)
-lm.age.before <- glm(dta_label$LGO_before ~ dta_label$age, family = binomial, weights = dta_label$weight)
-summary(lm.age.before)
-exp(cbind(OR = coef(lm.age.before), confint.default(lm.age.before)))
-
-#Ethnicity = factor
-class(dta_label$ethnicity)
-table(dta_label$ethnicity)
-dta_label$ethnicity <- as.factor(dta_label$ethnicity)
-
-#Swap ref cats:
-# Ethnicity
-contrasts(dta_label$ethnicity)
-table(dta_label$ethnicity)
-sort(table(dta_label$ethnicity), decreasing = TRUE)
-names(sort(table(dta_label$ethnicity), decreasing = TRUE))
-dta_label$ethnicity <- factor(dta_label$ethnicity, 
-                              levels = names(sort(table(dta_label$ethnicity), decreasing = TRUE)))
-contrasts(dta_label$ethnicity)
-
-#LGM - ethnicity
-contrasts(dta_label$ethnicity)
-lm.eth.before <- glm(dta_label$LGO_before ~ dta_label$ethnicity, family = binomial, weights = dta_label$weight)
-summary(lm.eth.before)
-exp(cbind(OR = coef(lm.eth.before), confint.default(lm.eth.before)))
-
-#LGM - dog owners
-contrasts(dta_label$dogs)
-lm.dogs.before <- glm(dta_label$LGO_before ~ dta_label$dogs, family = binomial, weights = dta_label$weight)
-summary(lm.dogs.before)
-exp(cbind(OR = coef(lm.dogs.before), confint.default(lm.dogs.before)))
-
-#LGM = visit before + All
-lm.before.adj <- glm(LGO_before ~ sex + social_grade + age
-                     + ethnicity + dogs,
-                     family = binomial, weights = dta_label$weight, data=dta_label)
-summary(lm.before.adj)
-exp(cbind(OR = coef(lm.before.adj), confint.default(lm.before.adj)))
-
-#****plots - testing****works: (probability)
-library(effects)
-plot(allEffects(lm.before.adj), ci.style = "band", 
-     ylab = "Visited before restrictions" )
-plot(lm.before.adj)
-
-#but need weights below:
-library(finalfit)
-library(dplyr)
-library(ggplot2)
-data(dta_label)
-explanatory = c("sex", "age", "socialgrade", "ethnicity", "dogs")
-dependent = "LGO_before"
-dta_label %>%
-  or_plot(dependent, explanatory)
-
-dta_label %>%
-  or_plot(dependent = "LGO_before", explanatory = c("sex", "age", "socialgrade", "ethnicity", "dogs"), weights = weight)
-plot(allEffects(lm.before.adj))
-
 
 # Interaction 
 #sg/ethnicity
@@ -736,4 +504,236 @@ dta_label$nowuse[dta_label$before_after=="7"] <- "Now use"
 table(dta_label$nowuse)
 
 crosstab(dta_label$nowuse, dta_label$sex, prop.c=T, weight = dta_label$weight, chisq = T, plot = F)
+
+#############################################################################
+#Other edits: 
+
+#delete row
+dta_code <- dta_code[-1,]
+dta_label <- dta_label[-1,]
+dta_label2 <- dta_label2[-1,]
+
+#Weight tbl works*
+class(dta_code$weight)
+dta_code$weight <- as.numeric(dta_code$weight)
+dta_label$weight <- as.numeric(dta_label$weight)
+class(dta_label$weight)
+
+#Ethnicity groups
+dta_label$ethnicity <- NA
+dta_label$ethnicity[dta_label2$profile_ethnicity=="White British"] <- "White"
+dta_label$ethnicity[dta_label2$profile_ethnicity=="Any other white background"] <- "White"
+dta_label$ethnicity[dta_label2$profile_ethnicity=="White and Black Caribbean"] <- "BAME"
+dta_label$ethnicity[dta_label2$profile_ethnicity=="White and Black African"]  <- "BAME"
+dta_label$ethnicity[dta_label2$profile_ethnicity=="White and Asian"]  <- "BAME"
+dta_label$ethnicity[dta_label2$profile_ethnicity=="Any other mixed background"]  <- "BAME"
+dta_label$ethnicity[dta_label2$profile_ethnicity=="Indian"]  <- "BAME"
+dta_label$ethnicity[dta_label2$profile_ethnicity=="Pakistani"]  <- "BAME"
+dta_label$ethnicity[dta_label2$profile_ethnicity=="Bangladeshi"]  <- "BAME"
+dta_label$ethnicity[dta_label2$profile_ethnicity=="Any other Asian background"]  <- "BAME"
+dta_label$ethnicity[dta_label2$profile_ethnicity=="Black Caribbean"]  <- "BAME"
+dta_label$ethnicity[dta_label2$profile_ethnicity=="Black African"]  <- "BAME"
+dta_label$ethnicity[dta_label2$profile_ethnicity=="Any other black background"]  <- "BAME"
+dta_label$ethnicity[dta_label2$profile_ethnicity=="Chinese"]  <- "BAME"
+dta_label$ethnicity[dta_label2$profile_ethnicity=="Other ethnic group"]  <- "BAME"
+dta_label$ethnicity[dta_label2$profile_ethnicity=="Prefer not to say"]  <- NA
+table(dta_label$ethnicity)
+table(dta_label$profile_ethnicity)
+
+#Change age cats
+dta_label$age2 <- dta_label$age
+dta_label$age <- dta_label_age_$profile_julesage2
+table(dta_label$age)
+table(dta_label$age2)
+
+#make age cat (younger,middle,older):
+dta_label$age <- NA
+dta_label$age[dta_label$age2=="18-24"] <- "18-24"
+dta_label$age[dta_label$age2=="25-34"] <- "25-64"
+dta_label$age[dta_label$age2=="35-44"] <- "25-64"
+dta_label$age[dta_label$age2=="45-54"] <- "25-64"
+dta_label$age[dta_label$age2=="55-64"] <- "25-64"
+dta_label$age[dta_label$age2=="65+"] <- "65+"
+table(dta_label$age)
+#make factor
+dta_label$age <- as.factor(dta_label$age)
+class(dta_label$age)
+#check which will be reference
+contrasts(dta_label$age)
+table(dta_label$age)
+dta_label$age <- relevel(dta_label$age, ref = "25-64")
+contrasts(dta_label$age)
+
+#make/check dog cat
+table(dta_label$pets_rcy)
+class(dta_label$pets_rcy)
+dta_label$pets_rcy <- as.factor(dta_label$pets_rcy)
+dta_label$dogs <- NA
+dta_label$dogs[dta_label$pets_rcy=="Dog owners"] <- "Dog"
+dta_label$dogs[dta_label$pets_rcy=="NA"] <- "None"
+table(dta_label$dogs)
+dta_label$dogs[is.na(dta_label$dogs)] <- "None"
+#Make factor
+class(dta_label$dogs)
+dta_label$dogs <- as.factor(dta_label$dogs)
+contrasts(dta_label$dogs)
+#Swap ref cats
+table(dta_label$dogs)
+sort(table(dta_label$dogs), decreasing = TRUE)
+names(sort(table(dta_label$dogs), decreasing = TRUE))
+dta_label$dogs <- factor(dta_label$dogs, 
+                        levels = names(sort(table(dta_label$dogs), decreasing = TRUE)))
+contrasts(dta_label$dogs)
+
+#new social grade cat for plots
+dta_label$social_grade <- NA
+dta_label$social_grade[dta_label$socialgrade=="ABC1"] <- "Higher SG"
+dta_label$social_grade[dta_label$socialgrade=="C2DE"] <- "Lower SG"
+table(dta_label$social_grade)
+dta_label$social_grade <- as.factor(dta_label$social_grade)
+contrasts(dta_label$socialgrade)
+contrasts(dta_label$social_grade)
+
+#2: Log Reg Models***********************
+library(generalhoslem)
+library(stats)
+library(descr)
+
+#Visit GS before lockdown
+
+#Visit = change to binary cats - Yes/No (don't know = missing)
+dta_label$LGO_before <- NA
+dta_label$LGO_before[dta_label$LGO_Q1a=="Yes, I did"] <- "Yes, I did"
+dta_label$LGO_before[dta_label$LGO_Q1a=="No, I didn't"] <- "No, I didn't"
+dta_label$LGO_before[dta_label$LGO_Q1a=="Don't know/ can't recall"] <- NA
+table(dta_label$LGO_before)
+#make factor
+dta_label$LGO_before <- as.factor(dta_label$LGO_before)
+class(dta_label$LGO_before)
+contrasts(dta_label$LGO_before)
+
+#check NA/missing
+sum(is.na(dta_label$LGO_before))
+sum(is.na(dta_label$LGO_Q1a))
+table(dta_label$LGO_Q1a)
+
+
+#Sex = turn into factor
+table(dta_label$profile_gender)
+dta_label$sex <- NA
+dta_label$sex[dta_label$profile_gender=="Female"] <- "Female"
+dta_label$sex[dta_label$profile_gender=="Male"] <- "Male"
+table(dta_label$sex)
+#make factor
+dta_label$sex <- as.factor(dta_label$sex)
+class(dta_label$sex)
+
+# Swap ref cats:
+# Sex
+table(dta_label$sex)
+sort(table(dta_label$sex), increasing = TRUE)
+names(sort(table(dta_label$sex), increasing = TRUE))
+dta_label$sex <- factor(dta_label$sex, 
+                        levels = names(sort(table(dta_label$sex), increasing = TRUE)))
+contrasts(dta_label$sex)
+
+#LGM- Sex
+#check which will be reference
+contrasts(dta_label$sex) 
+#model
+lm.sex.before <- glm(dta_label$LGO_before ~ dta_label$sex, family = binomial, weights = dta_label$weight)
+summary(lm.sex.before)
+exp(cbind(OR = coef(lm.sex.before), confint.default(lm.sex.before)))
+
+
+#Social grade = factor
+dta_label$socialgrade <- NA
+dta_label$socialgrade[dta_label$profile_socialgrade_cie_rc=="ABC1"] <- "ABC1"
+dta_label$socialgrade[dta_label$profile_socialgrade_cie_rc=="C2DE"] <- "C2DE"
+table(dta_label$profile_socialgrade_cie_rc)
+#make factor
+dta_label$socialgrade <- as.factor(dta_label$socialgrade)
+class(dta_label$socialgrade)
+
+#LGM - social grade
+contrasts(dta_label$socialgrade)
+lm.sg.before <- glm(dta_label$LGO_before ~ dta_label$socialgrade, family = binomial, weights = dta_label$weight)
+summary(lm.sg.before)
+exp(cbind(OR = coef(lm.sg.before), confint.default(lm.sg.before)))
+
+#Age = factor
+#class(dta_label$profile_julesage)
+#table(dta_label$profile_julesage2)
+#dta_label$age <- NA
+#dta_label$age[dta_label$profile_julesage2=="18-24"] <- "18-24"
+#dta_label$age[dta_label$profile_julesage2=="25-34"] <- "25-34"
+#dta_label$age[dta_label$profile_julesage2=="35-44"] <- "35-44"
+#dta_label$age[dta_label$profile_julesage2=="45-54"] <- "45-54"
+#dta_label$age[dta_label$profile_julesage2=="55-64"] <- "55-64"
+#dta_label$age[dta_label$profile_julesage2=="65+"] <- "65+"
+table(dta_label$age)
+#make factor
+dta_label$age <- as.factor(dta_label$age)
+class(dta_label$age)
+
+#LGM - age
+contrasts(dta_label$age)
+lm.age.before <- glm(dta_label$LGO_before ~ dta_label$age, family = binomial, weights = dta_label$weight)
+summary(lm.age.before)
+exp(cbind(OR = coef(lm.age.before), confint.default(lm.age.before)))
+
+#Ethnicity = factor
+class(dta_label$ethnicity)
+table(dta_label$ethnicity)
+dta_label$ethnicity <- as.factor(dta_label$ethnicity)
+
+#Swap ref cats:
+# Ethnicity
+contrasts(dta_label$ethnicity)
+table(dta_label$ethnicity)
+sort(table(dta_label$ethnicity), decreasing = TRUE)
+names(sort(table(dta_label$ethnicity), decreasing = TRUE))
+dta_label$ethnicity <- factor(dta_label$ethnicity, 
+                              levels = names(sort(table(dta_label$ethnicity), decreasing = TRUE)))
+contrasts(dta_label$ethnicity)
+
+#LGM - ethnicity
+contrasts(dta_label$ethnicity)
+lm.eth.before <- glm(dta_label$LGO_before ~ dta_label$ethnicity, family = binomial, weights = dta_label$weight)
+summary(lm.eth.before)
+exp(cbind(OR = coef(lm.eth.before), confint.default(lm.eth.before)))
+
+#LGM - dog owners
+contrasts(dta_label$dogs)
+lm.dogs.before <- glm(dta_label$LGO_before ~ dta_label$dogs, family = binomial, weights = dta_label$weight)
+summary(lm.dogs.before)
+exp(cbind(OR = coef(lm.dogs.before), confint.default(lm.dogs.before)))
+
+#LGM = visit before + All
+lm.before.adj <- glm(LGO_before ~ sex + social_grade + age
+                     + ethnicity + dogs,
+                     family = binomial, weights = dta_label$weight, data=dta_label)
+summary(lm.before.adj)
+exp(cbind(OR = coef(lm.before.adj), confint.default(lm.before.adj)))
+
+#****plots - testing****works: (probability)
+library(effects)
+plot(allEffects(lm.before.adj), ci.style = "band", 
+     ylab = "Visited before restrictions" )
+plot(lm.before.adj)
+
+#but need weights below:
+library(finalfit)
+library(dplyr)
+library(ggplot2)
+data(dta_label)
+explanatory = c("sex", "age", "socialgrade", "ethnicity", "dogs")
+dependent = "LGO_before"
+dta_label %>%
+  or_plot(dependent, explanatory)
+
+dta_label %>%
+  or_plot(dependent = "LGO_before", explanatory = c("sex", "age", "socialgrade", "ethnicity", "dogs"), weights = weight)
+plot(allEffects(lm.before.adj))
+
 
