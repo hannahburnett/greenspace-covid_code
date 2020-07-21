@@ -4,9 +4,6 @@ library(foreign)
 dta_code <- read.xlsx(file.choose(), convert.underscore = T)
 
 #import dta
-dta_code <- SAV_for_University_of_Glasgow_Outside_Space_and_Covid_1_5_2020_CODES
-dta_label <- SAV_for_University_of_Glasgow_Outside_Space_and_Covid_1_5_2020_LABEL
-rm(SAV_for_University_of_Glasgow_Outside_Space_and_Covid_1_5_2020_LABEL)
 
 #delete row
 dta_code <- dta_code[-1,]
